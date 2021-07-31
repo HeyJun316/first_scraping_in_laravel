@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use Carbon\Carbon;
 use Illuminate\Console\Command;
-use Illuminat\Support\Facades\DB;
+use Illuminate\Support\Facades\DB;
 
 class Scp extends Command
 {
@@ -39,6 +39,17 @@ class Scp extends Command
      */
     public function handle()
     {
+        $this->truncateTables();
+        $this->saveUrls();
+    }
+
+    private function truncateTables()
+    {
+        DB::table('mynavi_urls')->truncate();
+    }
+
+    private function saveUrls()
+    {
         $url = 'https://tenshoku.mynavi.jp/list/pg3';
         $crawler = \Goutte::request('GET', $url);
         $urls = $crawler->filter('.cassetteRecruit__copy > a')->each(function ($node) {
@@ -49,10 +60,9 @@ class Scp extends Command
                 'updated_at' => Carbon::now(),
                 ];
             });
-
-            \DB::table('mynavi_urls')->insert($urls);
-        }
+            DB::table('mynavi_urls')->insert($urls);
     }
+}
 
     // $href = $node->attr('href');
     // dump();
