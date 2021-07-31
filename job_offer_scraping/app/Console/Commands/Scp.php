@@ -50,7 +50,8 @@ class Scp extends Command
 
     private function saveUrls()
     {
-        $url = 'https://tenshoku.mynavi.jp/list/pg3';
+        foreach (range(1, 1) as $num) {
+        $url = 'https://tenshoku.mynavi.jp/list/pg' . $num .'/';
         $crawler = \Goutte::request('GET', $url);
         $urls = $crawler->filter('.cassetteRecruit__copy > a')->each(function ($node) {
             $href = $node->attr('href');
@@ -61,6 +62,8 @@ class Scp extends Command
                 ];
             });
             DB::table('mynavi_urls')->insert($urls);
+            sleep(30);
+        }
     }
 }
 
