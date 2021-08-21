@@ -2,12 +2,17 @@
 
 namespace App\Console\Commands;
 
+use App\Models\MynaviUrl;
+use App\Models\MynaviJob;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
 class Scp extends Command
 {
+    const HOST = 'https://tenshoku.mynavi.jp';
+    const FILE_PATH = 'app/mynavi_jobs.csv';
+    const PAGE_NUM = 2;
     /**
      * The name and signature of the console command.
      *
@@ -41,6 +46,8 @@ class Scp extends Command
     {
         $this->truncateTables();
         $this->saveUrls();
+        $this->saveJobs();
+        $this->exportCsv();
     }
 
     private function truncateTables()
@@ -50,8 +57,8 @@ class Scp extends Command
 
     private function saveUrls()
     {
-        foreach (range(1, 1) as $num) {
-        $url = 'https://tenshoku.mynavi.jp/list/pg' . $num .'/';
+        foreach (range(1, $this::PAGE_NUM) as $num) {
+        $url = $this::HOST . '/list/pg' . $num .'/';
         $crawler = \Goutte::request('GET', $url);
         $urls = $crawler->filter('.cassetteRecruit__copy > a')->each(function ($node) {
             $href = $node->attr('href');
@@ -65,24 +72,63 @@ class Scp extends Command
             sleep(30);
         }
     }
+
+    private function saveJobs()
+    {
+        foreach (MynaviUrl::all() as $index => $mynaviUrl){
+            $url = $this::HOST . $mynaviUrl->url;
+            $crawler = \Goutte::request('GET', $url);
+            MynaviJob::create([
+                'url' => $url,
+                'title' => $this->getTitle($crawler),
+                'company_name' => $this->getCompanyName($crawler),
+                'features' => $this->getFeatures($crawler),
+            ]);
+            if ($index > 2) {
+            break;
+            }
+            sleep(30);
+            }
+    }
+
+    private function getTitle($crawler)
+    {
+        return $crawler->filter('.occName')->text();
+    }
+
+    private function getCompanyName($crawler)
+    {
+        return $crawler->filter('.companyName')->text();
+    }
+
+    private function getFeatures($crawler)
+    {
+        $features = $crawler->filter('
+        .cassetteRecruit__attribute.cassetteRecruit__attribute-jobinfo .cassetteRecruit__attributeLabel span')->each(function ($node) {
+            return $node->text();
+            });
+            return implode(',', $features);
+
+    }
+
+    private function exportCsv()
+    {
+        $file = fopen(storage_path($this::FILE_PATH), 'w');
+        if (!$file) {
+            throw new \Exception('ファイルの作成に失敗しました');
+        }
+
+        if(!fputcsv($file, ['id', 'url', 'title', 'company_name', 'feature']
+    )) {
+        throw new \Exception('ヘッダに書き込みが失敗しました。');
+    };
+
+    foreach (MynaviJob::all() as $job) {
+            if(!fputcsv($file, [$job->id, $job->url, $job->title, $job->company_name, $job->features])) {
+                throw new \Exception('ボディの書き込みに失敗しました');
+            }
+        }
+
+        fclose($file);
+    }
 }
-
-    // $href = $node->attr('href');
-    // dump();
-
-    // $crawler = Goutte::request('GET', 'https://duckduckgo.com/html/?q=Laravel');
-    // $crawler->filter('.result__title .result__a')->each(function ($node) {
-    //     dump($node->text());
-    // });
-
-    // $str = 'today is rainy. It will rain tomorrow.';
-
-    // //検索する文字列
-    // $search = 'rain';
-
-    // //指定した文字列を検索する
-
-    // // $pos = strpos($str, $search, 14) + 1; //文字列の14番目からrainを探す 24番目が出力
-    // $pos = strpos($str, $search) + 1; //文字列先頭からrainを探す 9番目が出力
-
-    // echo '文字列'.$search.'の位置は'.$pos.'番目です。';
