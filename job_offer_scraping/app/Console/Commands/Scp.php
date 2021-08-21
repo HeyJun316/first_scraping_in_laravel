@@ -13,11 +13,7 @@ class Scp extends Command
     const HOST = 'https://tenshoku.mynavi.jp';
     const FILE_PATH = 'app/mynavi_jobs.csv';
     const PAGE_NUM = 2;
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
+
     protected $signature = 'scrape';
 
     /**
@@ -103,10 +99,12 @@ class Scp extends Command
 
     private function getFeatures($crawler)
     {
-        $features = $crawler->filter('
-        .cassetteRecruit__attribute.cassetteRecruit__attribute-jobinfo .cassetteRecruit__attributeLabel span')->each(function ($node) {
+        $features = $crawler->filter(
+            '.cassetteRecruit__attribute.cassetteRecruit__attribute-jobinfo .cassetteRecruit__attributeLabel span'
+            )->each(function ($node) {
             return $node->text();
             });
+
             return implode(',', $features);
 
     }
