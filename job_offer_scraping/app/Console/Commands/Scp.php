@@ -116,13 +116,14 @@ class Scp extends Command
             throw new \Exception('ファイルの作成に失敗しました');
         }
 
-        if(!fputcsv($file, ['id', 'url', 'title', 'company_name', 'feature']
-    )) {
+        if(!fputcsv($file, ['id', 'url', 'title', 'company_name', 'feature']))
+        {
         throw new \Exception('ヘッダに書き込みが失敗しました。');
-    };
+        };
 
     foreach (MynaviJob::all() as $job) {
-            if(!fputcsv($file, [$job->id, $job->url, $job->title, $job->company_name, $job->features])) {
+            if(!fputcsv($file, [$job->id, $job->url, $job->title, $job->company_name, $job->features]))
+            {
                 throw new \Exception('ボディの書き込みに失敗しました');
             }
         }
